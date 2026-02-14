@@ -1,0 +1,25 @@
+
+<%- include('partials/header', { title }) %>
+<section>
+  <h1>Bienvenue 👋</h1>
+  <p>Application privée de gestion des catways et réservations.
+     Connectez‑vous pour accéder au tableau de bord et aux opérations CRUD.
+  </p>
+  <form method="post" action="/login" class="card">
+    <h2>Connexion</h2>
+    <label>Email
+      <input type="email" name="email" required />
+    </label>
+    <label>Mot de passe
+      <input type="password" name="password" required />
+    </label>
+    <button type="submit">Se connecter</button>
+    <% if (errors && errors.length) { %>
+      <ul class="errors">
+        <% errors.forEach(e => { %><li><%= e.msg %></li><% }) %>
+      </ul>
+    <% } %>
+  </form>
+  <p><a href="/docs">→ Consulter la documentation de l'API (Swagger)</a></p>
+</section>
+<%- include('partials/footer') %>

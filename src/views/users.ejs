@@ -1,0 +1,53 @@
+
+<%- include('partials/header', { title, user }) %>
+<section>
+  <h1>Utilisateurs</h1>
+  <form id="createUser" class="card" onsubmit="return createUser(event)">
+    <h3>Créer un utilisateur</h3>
+    <label>Nom d'utilisateur <input name="username" required /></label>
+    <label>Email <input name="email" type="email" required /></label>
+    <label>Mot de passe <input name="password" type="password" required /></label>
+    <button type="submit">Créer</button>
+  </form>
+  <h2>Liste</h2>
+  <table id="usersTable"><thead><tr><th>Nom</th><th>Email</th><th>Créé le</th><th>Actions</th></tr></thead><tbody></tbody></table>
+</section>
+<script>
+async function fetchUsers(){
+  const res = await fetch('/users');
+  const data = await res.json();
+  const tbody = document.querySelector('#usersTable tbody');
+  tbody.innerHTML = '';
+  data.forEach(u=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td contenteditable data-email="${u.email}" data-field="username">${u.username}</td><td>${u.email}</td><td>${new Date(u.createdAt).toLocaleDateString('fr-FR')}</td><td><button data-del="${u.email}">Supprimer</button></td>`;
+    tbody.appendChild(tr);
+  });
+  tbody.addEventListener('input', async (e)=>{
+    const td = e.target.closest('[contenteditable]');
+    if(td){
+      const email = td.getAttribute('data-email');
+      const field = td.getAttribute('data-field');
+      const value = td.textContent.trim();
+      await fetch(`/users/${encodeURIComponent(email)}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({[field]: value})});
+    }
+  });
+  tbody.addEventListener('click', async (e)=>{
+    if(e.target.matches('button[data-del]')){
+      const email = e.target.getAttribute('data-del');
+      await fetch(`/users/${encodeURIComponent(email)}`, {method:'DELETE'});
+      fetchUsers();
+    }
+  });
+}
+async function createUser(e){
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
+  await fetch('/users', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  e.target.reset();
+  fetchUsers();
+}
+fetchUsers();
+</script>
+<%- include('partials/footer') %>

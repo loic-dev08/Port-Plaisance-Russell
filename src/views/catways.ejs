@@ -1,0 +1,56 @@
+
+<%- include('partials/header', { title, user }) %>
+<section>
+  <h1>Catways</h1>
+  <form id="createCatway" class="card" onsubmit="return createCatway(event)">
+    <h3>Créer un catway</h3>
+    <label>Numéro <input name="catwayNumber" type="number" min="1" required /></label>
+    <label>Type
+      <select name="catwayType" required>
+        <option value="long">long</option>
+        <option value="short">short</option>
+      </select>
+    </label>
+    <label>État <input name="catwayState" type="text" /></label>
+    <button type="submit">Créer</button>
+  </form>
+  <h2>Liste</h2>
+  <table id="catwaysTable"><thead><tr><th>#</th><th>Type</th><th>État</th><th>Actions</th></tr></thead><tbody></tbody></table>
+</section>
+<script>
+async function fetchCatways(){
+  const res = await fetch('/catways');
+  const data = await res.json();
+  const tbody = document.querySelector('#catwaysTable tbody');
+  tbody.innerHTML = '';
+  data.forEach(c=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${c.catwayNumber}</td><td>${c.catwayType}</td><td><input value="${c.catwayState||''}" data-id="${c.catwayNumber}"/></td><td><button data-del="${c.catwayNumber}">Supprimer</button></td>`;
+    tbody.appendChild(tr);
+  });
+  tbody.addEventListener('change', async (e)=>{
+    if(e.target.matches('input[data-id]')){
+      const id = e.target.getAttribute('data-id');
+      await fetch(`/catways/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({catwayState:e.target.value})});
+    }
+  });
+  tbody.addEventListener('click', async (e)=>{
+    if(e.target.matches('button[data-del]')){
+      const id = e.target.getAttribute('data-del');
+      await fetch(`/catways/${id}`, {method:'DELETE'});
+      fetchCatways();
+    }
+  });
+}
+async function createCatway(e){
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
+  body.catwayNumber = Number(body.catwayNumber);
+  await fetch('/catways', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  e.target.reset();
+  fetchCatways();
+}
+fetchCatways();
+</script>
+<%- include('partials/footer') %>

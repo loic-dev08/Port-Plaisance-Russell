@@ -1,0 +1,51 @@
+
+<%- include('partials/header', { title, user }) %>
+<section>
+  <h1>Réservations</h1>
+  <form id="createReservation" class="card" onsubmit="return createRes(event)">
+    <h3>Créer une réservation</h3>
+    <label>Catway # <input name="catwayNumber" type="number" min="1" required /></label>
+    <label>Client <input name="clientName" required /></label>
+    <label>Bateau <input name="boatName" required /></label>
+    <label>Début <input name="startDate" type="date" required /></label>
+    <label>Fin <input name="endDate" type="date" required /></label>
+    <button type="submit">Créer</button>
+  </form>
+  <h2>Liste (toutes)</h2>
+  <table id="resTable"><thead><tr><th>Catway</th><th>Client</th><th>Bateau</th><th>Début</th><th>Fin</th><th>Actions</th></tr></thead><tbody></tbody></table>
+</section>
+<script>
+async function fetchAll(){
+  const tbody = document.querySelector('#resTable tbody');
+  tbody.innerHTML = '';
+  // récupère catways puis pour chacun ses réservations
+  const catways = await (await fetch('/catways')).json();
+  for(const c of catways){
+    const res = await fetch(`/catways/${c.catwayNumber}/reservations`);
+    const list = await res.json();
+    list.forEach(r=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.catwayNumber}</td><td>${r.clientName}</td><td>${r.boatName}</td><td>${new Date(r.startDate).toLocaleDateString('fr-FR')}</td><td>${new Date(r.endDate).toLocaleDateString('fr-FR')}</td><td><button data-del="${c.catwayNumber}|${r._id}">Supprimer</button></td>`;
+      tbody.appendChild(tr);
+    })
+  }
+  tbody.addEventListener('click', async (e)=>{
+    if(e.target.matches('button[data-del]')){
+      const [cat,id] = e.target.getAttribute('data-del').split('|');
+      await fetch(`/catways/${cat}/reservations/${id}`, {method:'DELETE'});
+      fetchAll();
+    }
+  });
+}
+async function createRes(e){
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
+  const id = body.catwayNumber; delete body.catwayNumber;
+  await fetch(`/catways/${id}/reservations`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  e.target.reset();
+  fetchAll();
+}
+fetchAll();
+</script>
+<%- include('partials/footer') %>
